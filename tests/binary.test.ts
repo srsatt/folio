@@ -37,7 +37,12 @@ describe("standalone binary", () => {
     const installed = await run(["bun", "run", "scripts/install.ts", "--bin-dir", binDirectory]);
     expect(installed.exitCode).toBe(0);
     expect(await Bun.file(binary).exists()).toBe(true);
-    expect((await run([binary, "--version"])).stdout.trim()).toBe(packageJson.version);
+    const version = await run([binary, "--version"]);
+    expect({ ...version, stdout: version.stdout.trim(), stderr: version.stderr.trim() }).toEqual({
+      exitCode: 0,
+      stdout: packageJson.version,
+      stderr: "",
+    });
 
     const created = await run(
       [binary, "create", "--stdin", "--no-open", "--json", "--data-dir", folioHome],
