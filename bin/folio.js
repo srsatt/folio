@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
 
-import { runCliMain } from "../src/cli.ts";
+import { runCli } from "../src/cli.ts";
 
-await runCliMain();
+process.exitCode = await runCli();

@@ -9,19 +9,18 @@ afterEach(async () => {
 });
 
 async function run(command: string[], environment: Record<string, string> = {}, stdin?: string) {
-  const child = Bun.spawn(command, {
+  const child = Bun.spawnSync(command, {
     cwd: join(import.meta.dir, ".."),
     env: { ...process.env, ...environment },
-    stdin: stdin === undefined ? "ignore" : new Blob([stdin]),
+    ...(stdin === undefined ? {} : { stdin: Buffer.from(stdin) }),
     stdout: "pipe",
     stderr: "pipe",
   });
-  const [exitCode, stdout, stderr] = await Promise.all([
-    child.exited,
-    new Response(child.stdout).text(),
-    new Response(child.stderr).text(),
-  ]);
-  return { exitCode, stdout, stderr };
+  return {
+    exitCode: child.exitCode,
+    stdout: child.stdout.toString(),
+    stderr: child.stderr.toString(),
+  };
 }
 
 describe("standalone binary", () => {
