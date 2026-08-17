@@ -1,0 +1,64 @@
+{
+  "name": "agent-folio",
+  "version": "0.1.1",
+  "description": "Local-first, zero-server reports for coding-agent work",
+  "keywords": [
+    "ai-agent",
+    "code-review",
+    "report",
+    "markdoc",
+    "cli"
+  ],
+  "author": "srsatt",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/srsatt/folio.git"
+  },
+  "homepage": "https://github.com/srsatt/folio#readme",
+  "bugs": "https://github.com/srsatt/folio/issues",
+  "type": "module",
+  "bin": {
+    "folio": "bin/folio.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "scripts",
+    "skills",
+    "examples",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "scripts": {
+    "folio": "bun run src/cli.ts",
+    "build:binary": "bun run scripts/build.ts",
+    "build:release": "bun run scripts/build.ts --all",
+    "install:binary": "bun run scripts/install.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "test:e2e": "playwright test",
+    "test:package": "bun run scripts/package-smoke.ts",
+    "check": "bun run typecheck && bun test",
+    "prepublishOnly": "bun run check && bun run test:package"
+  },
+  "dependencies": {
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@markdoc/markdoc": "^0.5.9",
+    "shiki": "^4.4.3",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/bun": "^1.3.13",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "bun": ">=1.3.0"
+  },
+  "packageManager": "bun@1.3.13",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
+}

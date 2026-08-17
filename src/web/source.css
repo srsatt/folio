@@ -1,0 +1,77 @@
+.folio-source-header {
+  position: sticky;
+  z-index: 10;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 4.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--folio-border);
+  background: color-mix(in srgb, var(--folio-bg) 96%, transparent);
+  backdrop-filter: blur(12px);
+}
+.folio-source-title { min-width: 0; }
+.folio-source-title strong, .folio-source-title span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.folio-source-title span { color: var(--folio-muted); font-size: 0.78rem; }
+.folio-source-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 330px);
+  gap: 1rem;
+  min-height: calc(100vh - 4.5rem);
+  padding: 1rem;
+}
+.folio-source-document { min-width: 0; }
+.folio-source-document .shiki {
+  min-height: calc(100vh - 6.5rem);
+  margin: 0;
+  padding: 1rem 0;
+  overflow: auto;
+  border: 1px solid var(--folio-border);
+  border-radius: 0.65rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.86rem;
+  line-height: 1.62;
+  tab-size: 2;
+}
+.folio-source-document .shiki code { display: block; min-width: max-content; font-family: inherit; font-size: 0; line-height: 0; }
+.folio-source-document .shiki .line {
+  position: relative;
+  display: block;
+  min-height: 1.62em;
+  padding: 0 1.2rem 0 4.8rem;
+  font-size: 0.86rem;
+  line-height: 1.62;
+}
+.folio-source-document .shiki .line::before {
+  position: absolute;
+  left: 0;
+  width: 3.8rem;
+  color: var(--folio-muted);
+  content: attr(data-line);
+  opacity: 0.62;
+  text-align: right;
+  user-select: none;
+}
+.folio-source-document .shiki .folio-source-selected {
+  background: color-mix(in srgb, var(--folio-accent) 18%, transparent);
+  box-shadow: inset 3px 0 var(--folio-accent);
+}
+.folio-source-document .shiki { background-color: var(--shiki-light-bg); }
+.folio-source-document .shiki span { color: var(--shiki-light); }
+:root[data-folio-theme="dark"] .folio-source-document .shiki { background-color: var(--shiki-dark-bg); }
+:root[data-folio-theme="dark"] .folio-source-document .shiki span { color: var(--shiki-dark); }
+@media (prefers-color-scheme: dark) {
+  :root[data-folio-theme="system"] .folio-source-document .shiki { background-color: var(--shiki-dark-bg); }
+  :root[data-folio-theme="system"] .folio-source-document .shiki span { color: var(--shiki-dark); }
+}
+@media (max-width: 900px) {
+  .folio-source-layout { grid-template-columns: minmax(0, 1fr); }
+  .folio-source-layout .folio-comment-sidebar { position: static; grid-column: 1; grid-row: 2; max-height: 45vh; }
+}
+@media print {
+  .folio-source-header, .folio-source-layout .folio-comment-sidebar { display: none !important; }
+  .folio-source-layout { display: block; padding: 0; }
+  .folio-source-document .shiki { min-height: 0; border: 0; }
+}

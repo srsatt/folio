@@ -1,0 +1,79 @@
+---
+schema: folio/v1
+title: Authentication refresh flow investigation
+kind: investigation
+tags:
+  - authentication
+  - concurrency
+  - architecture
+---
+
+{% summary %}
+The current refresh flow allows multiple concurrent requests to exchange the same refresh token, potentially causing redundant work and inconsistent session replacement.
+{% /summary %}
+
+## Context
+
+Session refresh is triggered independently by each request.
+
+The relevant code lives in {% file path="examples/fixtures/auth/session.ts" lines="9-15" /%}.
+
+{% media path="examples/artifacts/refresh-flow.svg" alt="Two requests entering one refresh flow concurrently" caption="Observed concurrent refresh flow" /%}
+
+## Findings
+
+{% finding id="refresh-race" severity="high" confidence="high" title="Parallel refresh requests can race" %}
+
+Two requests can read the same expired session and initiate token exchange independently.
+
+```ts
+const current = await sessionStore.read(token);
+
+if (current.expired) {
+  return sessionStore.replace(await refreshSession(token));
+}
+```
+
+The later write may replace state created by the earlier request.
+
+{% /finding %}
+
+{% evidence id="refresh-code" title="Current refresh implementation" path="examples/fixtures/auth/session.ts" lines="9-15" %}
+
+The refresh operation has no request-level or session-level coordination.
+
+{% /evidence %}
+
+## Recommended approach
+
+{% decision id="single-flight" status="recommended" title="Serialize refreshes per session" %}
+
+Use a single-flight promise keyed by session ID.
+
+Independent sessions should remain fully concurrent.
+
+{% /decision %}
+
+{% recommendation id="concurrency-test" priority="high" effort="small" title="Add a concurrent refresh test" %}
+
+Start two refresh operations for one session and verify that token exchange executes once.
+
+{% /recommendation %}
+
+## Risks
+
+{% risk id="multi-process" severity="medium" likelihood="medium" title="In-memory coordination is process-local" %}
+
+This solution does not coordinate multiple application processes.
+
+{% /risk %}
+
+{% details title="Raw observations" %}
+
+```text
+single request: 43 ms
+two concurrent requests: 78 ms
+token exchange calls: 2
+```
+
+{% /details %}

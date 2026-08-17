@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 260" role="img" aria-labelledby="title desc">
+  <title id="title">Concurrent refresh flow</title>
+  <desc id="desc">Two requests converge on one unguarded token exchange and produce two session writes.</desc>
+  <rect width="760" height="260" rx="18" fill="#f4f6f8"/>
+  <g font-family="system-ui, sans-serif" font-size="18" fill="#243142">
+    <rect x="40" y="38" width="150" height="58" rx="10" fill="#dbe8f8" stroke="#55799f"/>
+    <text x="115" y="74" text-anchor="middle">Request A</text>
+    <rect x="40" y="164" width="150" height="58" rx="10" fill="#dbe8f8" stroke="#55799f"/>
+    <text x="115" y="200" text-anchor="middle">Request B</text>
+    <rect x="300" y="101" width="180" height="58" rx="10" fill="#fff0c9" stroke="#9a7419"/>
+    <text x="390" y="137" text-anchor="middle">Token exchange</text>
+    <rect x="570" y="101" width="150" height="58" rx="10" fill="#dff1e5" stroke="#4d8060"/>
+    <text x="645" y="137" text-anchor="middle">Session write</text>
+  </g>
+  <g fill="none" stroke="#536273" stroke-width="4" marker-end="url(#arrow)">
+    <path d="M190 67 C250 67 250 115 300 124"/>
+    <path d="M190 193 C250 193 250 145 300 136"/>
+    <path d="M480 130 H570"/>
+  </g>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#536273"/></marker></defs>
+</svg>

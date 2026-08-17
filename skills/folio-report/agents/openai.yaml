@@ -1,0 +1,4 @@
+interface:
+  display_name: "Folio Report"
+  short_description: "Create durable reviewable Folio reports"
+  default_prompt: "Use $folio-report to create a standalone report I can review and annotate."
