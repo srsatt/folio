@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 
+import { writeSync } from "node:fs";
 import { resolve } from "node:path";
 import packageJson from "../package.json" with { type: "json" };
 
@@ -78,12 +79,12 @@ function packageVersion(): string {
   return packageJson.version;
 }
 
-function writeStdout(value: string): Promise<number> {
-  return Bun.write(Bun.stdout, `${value}\n`);
+function writeStdout(value: string): number {
+  return writeSync(1, `${value}\n`);
 }
 
-function writeStderr(value: string): Promise<number> {
-  return Bun.write(Bun.stderr, `${value}\n`);
+function writeStderr(value: string): number {
+  return writeSync(2, `${value}\n`);
 }
 
 function valueAfter(args: string[], flag: string): string | null {
