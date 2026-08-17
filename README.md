@@ -4,6 +4,8 @@ Folio turns substantial coding-agent output into durable, readable HTML reports 
 
 Select report text, add anchored comments in the right review rail, then copy structured Markdown back into your coding agent. No daemon, browser extension, cloud account, or network connection participates in that loop.
 
+![Folio architecture report with table-of-contents navigation, download controls, and an anchored comment in the review rail](docs/assets/folio-report-review.png)
+
 ## Install
 
 Folio is distributed as source through npm and requires [Bun](https://bun.sh/) 1.3 or newer. Run it without installing:
