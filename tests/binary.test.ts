@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import packageJson from "../package.json" with { type: "json" };
 
 import { minimalReport, removeTemporaryDirectory, temporaryDirectory } from "./helpers";
 
@@ -29,6 +28,7 @@ describe("standalone binary", () => {
   test("installer builds a self-contained CLI with report and skill assets", async () => {
     const root = await temporaryDirectory("folio-binary-");
     temporary.push(root);
+    const packageJson = await Bun.file(join(import.meta.dir, "..", "package.json")).json() as { version: string };
     const binDirectory = join(root, "bin");
     const binary = join(binDirectory, process.platform === "win32" ? "folio.exe" : "folio");
     const folioHome = join(root, "data");
