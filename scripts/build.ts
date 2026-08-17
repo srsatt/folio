@@ -18,7 +18,7 @@ export const RELEASE_TARGETS: ReleaseTarget[] = [
 ];
 
 const projectRoot = resolve(import.meta.dir, "..");
-const entrypoint = join(projectRoot, "src/cli.ts");
+const entrypoint = join(projectRoot, "bin/folio.js");
 
 export async function buildBinary(options: {
   outfile: string;
