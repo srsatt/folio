@@ -24,7 +24,9 @@ async function run(command: string[], environment: Record<string, string> = {}, 
 }
 
 describe("standalone binary", () => {
-  test("installer builds a self-contained CLI with report and skill assets", async () => {
+  const platformTest = process.platform === "win32" ? test.skip : test;
+
+  platformTest("installer builds a self-contained CLI with report and skill assets", async () => {
     const root = await temporaryDirectory("folio-binary-");
     temporary.push(root);
     const packageJson = await Bun.file(join(import.meta.dir, "..", "package.json")).json() as { version: string };
