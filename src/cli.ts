@@ -418,4 +418,15 @@ ${shouldOpenImplicitly(rest) ? opened ? "Opened in browser." : "Could not open b
   }
 }
 
-if (import.meta.main) process.exitCode = await runCli();
+async function flushStream(stream: NodeJS.WriteStream): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    stream.write("", (error) => error ? reject(error) : resolve());
+  });
+}
+
+export async function runCliMain(): Promise<void> {
+  process.exitCode = await runCli();
+  await Promise.all([flushStream(process.stdout), flushStream(process.stderr)]);
+}
+
+if (import.meta.main) await runCliMain();
