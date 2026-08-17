@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { join } from "node:path";
+import packageJson from "../package.json" with { type: "json" };
 
 import { minimalReport, removeTemporaryDirectory, temporaryDirectory } from "./helpers";
 
@@ -36,7 +37,7 @@ describe("standalone binary", () => {
     const installed = await run(["bun", "run", "scripts/install.ts", "--bin-dir", binDirectory]);
     expect(installed.exitCode).toBe(0);
     expect(await Bun.file(binary).exists()).toBe(true);
-    expect((await run([binary, "--version"])).stdout.trim()).toBe("0.1.0");
+    expect((await run([binary, "--version"])).stdout.trim()).toBe(packageJson.version);
 
     const created = await run(
       [binary, "create", "--stdin", "--no-open", "--json", "--data-dir", folioHome],

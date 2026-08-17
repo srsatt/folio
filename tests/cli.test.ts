@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { chmod } from "node:fs/promises";
 import { join } from "node:path";
+import packageJson from "../package.json" with { type: "json" };
 
 import { minimalReport, removeTemporaryDirectory, runCli, temporaryDirectory } from "./helpers";
 
@@ -54,7 +55,7 @@ describe("CLI", () => {
     const overriddenPath = await runCli(home, ["path", "--data-dir", override]);
     expect(overriddenPath.stdout.trim()).toBe(override);
     const version = await runCli(home, ["--version"]);
-    expect(version.stdout.trim()).toBe("0.1.0");
+    expect(version.stdout.trim()).toBe(packageJson.version);
 
     const help = await runCli(home, ["create", "--help"]);
     expect(help.stdout).toContain("Usage: folio create");
