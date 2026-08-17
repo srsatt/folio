@@ -78,6 +78,14 @@ function packageVersion(): string {
   return packageJson.version;
 }
 
+function writeStdout(value: string): Promise<number> {
+  return Bun.write(Bun.stdout, `${value}\n`);
+}
+
+function writeStderr(value: string): Promise<number> {
+  return Bun.write(Bun.stderr, `${value}\n`);
+}
+
 function valueAfter(args: string[], flag: string): string | null {
   const terminator = args.indexOf("--");
   const index = args.findIndex((argument, candidate) => argument === flag && (terminator === -1 || candidate < terminator));
@@ -195,8 +203,8 @@ function reportJson(report: ReportRecord): Record<string, unknown> {
   };
 }
 
-function printShow(report: ReportRecord): void {
-  console.log(`${report.title}
+async function printShow(report: ReportRecord): Promise<void> {
+  await writeStdout(`${report.title}
 
 Kind: ${report.kind}
 Created: ${report.createdAt}
@@ -211,15 +219,15 @@ export async function runCli(args = process.argv.slice(2)): Promise<number> {
   const command = args[0];
   const rest = args.slice(1);
   if (!command || command === "--help" || command === "-h") {
-    console.log(HELP);
+    await writeStdout(HELP);
     return 0;
   }
   if (command === "help") {
-    console.log(rest[0] ? COMMAND_HELP[rest[0]] ?? `Unknown command: ${rest[0]}\n\n${HELP}` : HELP);
+    await writeStdout(rest[0] ? COMMAND_HELP[rest[0]] ?? `Unknown command: ${rest[0]}\n\n${HELP}` : HELP);
     return rest[0] && !COMMAND_HELP[rest[0]] ? 1 : 0;
   }
   if (command === "--version" || command === "-V" || command === "version") {
-    console.log(packageVersion());
+    await writeStdout(packageVersion());
     return 0;
   }
 
@@ -227,7 +235,7 @@ export async function runCli(args = process.argv.slice(2)): Promise<number> {
     if (hasFlag(rest, "--help") || hasFlag(rest, "-h")) {
       const help = COMMAND_HELP[command];
       if (!help) throw new Error(`Unknown command: ${command}`);
-      console.log(help);
+      await writeStdout(help);
       return 0;
     }
     if (command === "skill") {
@@ -248,9 +256,9 @@ export async function runCli(args = process.argv.slice(2)): Promise<number> {
         dataDirectory,
         force: skillArgs.includes("--force"),
       });
-      if (skillArgs.includes("--json")) console.log(JSON.stringify(result));
-      else if (result.action === "unchanged") console.log(`Folio skill already installed:\n${result.path}`);
-      else console.log(`${result.action === "replaced" ? "Updated" : "Installed"} Folio skill:\n${result.path}`);
+      if (skillArgs.includes("--json")) await writeStdout(JSON.stringify(result));
+      else if (result.action === "unchanged") await writeStdout(`Folio skill already installed:\n${result.path}`);
+      else await writeStdout(`${result.action === "replaced" ? "Updated" : "Installed"} Folio skill:\n${result.path}`);
       return 0;
     }
 
@@ -259,7 +267,7 @@ export async function runCli(args = process.argv.slice(2)): Promise<number> {
       assertPositionals(command, rest);
       const shell = positional(rest)[0];
       if (!shell) throw new Error("Missing shell. Expected bash, zsh, or fish.");
-      console.log(completion(shell));
+      await writeStdout(completion(shell));
       return 0;
     }
 
@@ -268,17 +276,17 @@ export async function runCli(args = process.argv.slice(2)): Promise<number> {
 
     const home = resolveFolioHome(process.env, valueAfter(rest, "--data-dir"));
     if (command === "path") {
-      console.log(home);
+      await writeStdout(home);
       return 0;
     }
     if (command === "format") {
-      console.log(FORMAT_GUIDE);
+      await writeStdout(FORMAT_GUIDE);
       return 0;
     }
     if (command === "template") {
       const kind = positional(rest)[0];
       if (!kind || !isReportKind(kind)) throw new Error(`Unknown report kind: ${kind ?? "(missing)"}`);
-      console.log(reportTemplate(kind));
+      await writeStdout(reportTemplate(kind));
       return 0;
     }
     if (command === "validate") {
@@ -286,12 +294,12 @@ export async function runCli(args = process.argv.slice(2)): Promise<number> {
       const input = await readSource(positional(rest)[0] ?? null, hasFlag(rest, "--stdin"));
       try {
         const parsed = validateReport(input.source, input.file);
-        if (json) console.log(JSON.stringify({ valid: true, title: parsed.frontmatter.title, kind: parsed.frontmatter.kind, summary: parsed.summary }));
-        else console.log(`Valid Folio report\n\n${parsed.frontmatter.title}\n${parsed.frontmatter.kind}`);
+        if (json) await writeStdout(JSON.stringify({ valid: true, title: parsed.frontmatter.title, kind: parsed.frontmatter.kind, summary: parsed.summary }));
+        else await writeStdout(`Valid Folio report\n\n${parsed.frontmatter.title}\n${parsed.frontmatter.kind}`);
         return 0;
       } catch (error) {
         if (error instanceof FolioValidationError && json) {
-          console.log(JSON.stringify({ valid: false, errors: error.diagnostics }));
+          await writeStdout(JSON.stringify({ valid: false, errors: error.diagnostics }));
           return 1;
         }
         throw error;
@@ -308,7 +316,7 @@ export async function runCli(args = process.argv.slice(2)): Promise<number> {
         const created = await storeReport(db, home, parsed, collectGitMetadata(), supersedes);
         const opened = shouldOpenImplicitly(rest) ? await openInBrowser(created.record.htmlPath) : false;
         if (json) {
-          console.log(JSON.stringify({
+          await writeStdout(JSON.stringify({
             id: created.record.id,
             title: created.record.title,
             htmlPath: created.record.htmlPath,
@@ -319,7 +327,7 @@ export async function runCli(args = process.argv.slice(2)): Promise<number> {
           const git = created.record.repoKey && created.record.repoCommit
             ? `\nGit:\n${created.record.repoKey} @ ${created.record.repoCommit.slice(0, 7)}${created.record.repoDirty ? " (dirty)" : ""}\n`
             : "";
-          console.log(`Created Folio report
+          await writeStdout(`Created Folio report
 
 ${created.record.title}
 ${created.record.id}
@@ -347,9 +355,9 @@ ${shouldOpenImplicitly(rest) ? opened ? "Opened in browser." : "Could not open b
             kind: valueAfter(rest, "--kind") ?? undefined,
             limit,
           });
-          if (hasFlag(rest, "--json")) console.log(JSON.stringify(reports.map(reportJson)));
-          else if (reports.length === 0) console.log("No Folio reports.");
-          else console.log(reports.map((report) => `${report.createdAt}  ${report.kind}\n${report.id}  ${report.title}`).join("\n\n"));
+          if (hasFlag(rest, "--json")) await writeStdout(JSON.stringify(reports.map(reportJson)));
+          else if (reports.length === 0) await writeStdout("No Folio reports.");
+          else await writeStdout(reports.map((report) => `${report.createdAt}  ${report.kind}\n${report.id}  ${report.title}`).join("\n\n"));
           return 0;
         } finally {
           db.close();
@@ -361,9 +369,9 @@ ${shouldOpenImplicitly(rest) ? opened ? "Opened in browser." : "Could not open b
           if (!id) throw new Error("Missing report ID.");
           const report = getReport(db, id);
           if (!report) throw new Error(`Report not found: ${id}`);
-          if (hasFlag(rest, "--source")) console.log(report.sourceText);
-          else if (hasFlag(rest, "--json")) console.log(JSON.stringify(reportJson(report)));
-          else printShow(report);
+          if (hasFlag(rest, "--source")) await writeStdout(report.sourceText);
+          else if (hasFlag(rest, "--json")) await writeStdout(JSON.stringify(reportJson(report)));
+          else await printShow(report);
           return 0;
         } finally {
           db.close();
@@ -376,7 +384,7 @@ ${shouldOpenImplicitly(rest) ? opened ? "Opened in browser." : "Could not open b
           const report = id === "latest" ? getLatestReport(db) : getReport(db, id);
           if (!report) throw new Error(`Report not found: ${id}`);
           if (!await openInBrowser(report.htmlPath)) throw new Error(`Could not open browser. HTML: ${report.htmlPath}`);
-          console.log(`Opened ${report.title}\n${report.htmlPath}`);
+          await writeStdout(`Opened ${report.title}\n${report.htmlPath}`);
           return 0;
         } finally {
           db.close();
@@ -391,7 +399,7 @@ ${shouldOpenImplicitly(rest) ? opened ? "Opened in browser." : "Could not open b
         throw new Error("Non-loopback binding requires `--allow-network`.");
       }
       const server = startArchiveServer(db, { hostname: host, port });
-      console.log(`Folio archive: http://${server.hostname}:${server.port}`);
+      await writeStdout(`Folio archive: http://${server.hostname}:${server.port}`);
       await new Promise((done) => {
         const stop = () => {
           server.stop(true);
@@ -407,12 +415,12 @@ ${shouldOpenImplicitly(rest) ? opened ? "Opened in browser." : "Could not open b
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (hasFlag(rest, "--json")) {
-      console.error(JSON.stringify({ ok: false, error: { code: error instanceof FolioValidationError ? "VALIDATION_ERROR" : "CLI_ERROR", message, ...(error instanceof FolioValidationError ? { diagnostics: error.diagnostics } : {}) } }));
-    } else if (error instanceof FolioValidationError) console.error(`folio: report validation failed\n\n${formatDiagnostics(error)}`);
+      await writeStderr(JSON.stringify({ ok: false, error: { code: error instanceof FolioValidationError ? "VALIDATION_ERROR" : "CLI_ERROR", message, ...(error instanceof FolioValidationError ? { diagnostics: error.diagnostics } : {}) } }));
+    } else if (error instanceof FolioValidationError) await writeStderr(`folio: report validation failed\n\n${formatDiagnostics(error)}`);
     else {
-      console.error(`folio: ${message}`);
-      if (COMMAND_HELP[command]) console.error(`Run 'folio ${command} --help' for usage.`);
-      if (process.env.FOLIO_DEBUG === "1" && error instanceof Error && error.stack) console.error(`\n${error.stack}`);
+      await writeStderr(`folio: ${message}`);
+      if (COMMAND_HELP[command]) await writeStderr(`Run 'folio ${command} --help' for usage.`);
+      if (process.env.FOLIO_DEBUG === "1" && error instanceof Error && error.stack) await writeStderr(`\n${error.stack}`);
     }
     return 1;
   }
