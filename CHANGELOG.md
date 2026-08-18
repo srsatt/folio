@@ -9,6 +9,7 @@ All notable changes use this file. Folio follows [Semantic Versioning](https://s
 ### Added
 
 - Offline, interactive Flint chart specs compiled through the Plotly backend in standalone reports.
+- Safe `bun run release -- <version>` automation for verified tag-driven releases.
 
 ## [0.2.0] - 2026-08-18
 

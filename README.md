@@ -246,11 +246,11 @@ Tests isolate `FOLIO_HOME`; they never touch your real catalog.
 `bun run build:release` cross-compiles the six optional release executables into `dist/`. GitHub Actions checks Linux, macOS, and Windows, smoke-tests the packed npm command, bundles executables with license notices, generates SHA-256 checksums, publishes the npm package with provenance, and creates a GitHub release when a matching version tag is pushed:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+bun run release -- 0.3.0 --dry-run
+bun run release -- 0.3.0
 ```
 
-The tag must equal `v` plus the version in `package.json`. Before the first release, configure `srsatt/folio` as a trusted publisher for `agent-folio` on npm. A manual workflow run builds the same downloadable archives as workflow artifacts without creating a GitHub release or publishing npm.
+The release command requires a clean `main` synchronized with `origin/main`, the `srsatt` Git/GitHub identity, a matching `package.json` version and changelog section, and a version tag that does not exist. It runs all local gates, creates an annotated tag without rewriting commits, pushes the tag, and watches the release workflow. Use `--skip-gates` only when the same commit was already verified; CI always reruns the gates. Before the first release, configure `srsatt/folio` as a trusted publisher for `agent-folio` on npm. A manual workflow run builds the same downloadable archives as workflow artifacts without creating a GitHub release or publishing npm.
 
 ## Security model
 
