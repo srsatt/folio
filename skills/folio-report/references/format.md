@@ -77,6 +77,47 @@ Attach local image or video artifacts:
 
 Media paths are Git-root-relative. Folio reads them during creation and embeds their bytes as data URLs, so copied `report.html` remains complete and offline. Images require useful `alt` text. Optional attributes: `kind="image|video"`, `caption`, `title`.
 
+## Flint charts
+
+Use one fenced `flint` JSON spec inside a `chart` block:
+
+````markdoc
+{% chart alt="Requests by month" caption="Monthly request volume" %}
+
+```flint
+{
+  "data": {
+    "values": [
+      { "month": "Jan", "requests": 120 },
+      { "month": "Feb", "requests": 180 }
+    ]
+  },
+  "semantic_types": {
+    "month": "Month",
+    "requests": "Count"
+  },
+  "chart_spec": {
+    "chartType": "Bar Chart",
+    "encodings": { "x": "month", "y": "requests" }
+  }
+}
+```
+
+{% /chart %}
+````
+
+Folio compiles Flint to Plotly while creating the report and embeds Plotly into chart-bearing HTML. Charts remain interactive and offline in copied or downloaded HTML.
+
+Rules:
+
+- `alt` is required; `caption` is optional.
+- Use inline `data.values`. `data.url`, file reads, and remote fetches are rejected.
+- Use at most 5,000 rows, 100 fields, and 512 KiB of Flint JSON per chart.
+- Reference only fields present in the rows and give every encoded field a semantic type.
+- Prefer specific built-in semantic types such as `Month`, `Count`, `Amount`, `Percentage`, `Category`, `Date`, or `Duration`; never invent type names.
+- Author Flint, not Plotly configuration. Folio targets Flint's Plotly backend.
+- Use charts only when visual comparison or trend detection beats prose or a table.
+
 ## Minimal example
 
 ```markdoc

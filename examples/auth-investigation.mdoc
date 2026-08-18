@@ -20,6 +20,38 @@ The relevant code lives in {% file path="examples/fixtures/auth/session.ts" line
 
 {% media path="examples/artifacts/refresh-flow.svg" alt="Two requests entering one refresh flow concurrently" caption="Observed concurrent refresh flow" /%}
 
+{% chart alt="Refresh latency rises with concurrent requests" caption="Observed authentication refresh latency" %}
+
+```flint
+{
+  "data": {
+    "values": [
+      { "scenario": "Single request", "latencyMs": 43 },
+      { "scenario": "Two concurrent requests", "latencyMs": 78 }
+    ]
+  },
+  "semantic_types": {
+    "scenario": "Category",
+    "latencyMs": { "semanticType": "Duration", "unit": "ms" }
+  },
+  "field_display_names": {
+    "latencyMs": "Latency (ms)"
+  },
+  "chart_spec": {
+    "chartType": "Bar Chart",
+    "encodings": {
+      "x": "scenario",
+      "y": "latencyMs"
+    },
+    "chartProperties": {
+      "showValueLabels": true
+    }
+  }
+}
+```
+
+{% /chart %}
+
 ## Findings
 
 {% finding id="refresh-race" severity="high" confidence="high" title="Parallel refresh requests can race" %}

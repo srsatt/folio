@@ -4,6 +4,12 @@ All notable changes use this file. Folio follows [Semantic Versioning](https://s
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-18
+
+### Added
+
+- Offline, interactive Flint chart specs compiled through the Plotly backend in standalone reports.
+
 ## [0.2.0] - 2026-08-18
 
 ### Added
@@ -23,7 +29,8 @@ All notable changes use this file. Folio follows [Semantic Versioning](https://s
 
 - Initial local-first report compiler, catalog, review UI, archive, source viewer, standalone binaries, and coding-agent skill.
 
-[Unreleased]: https://github.com/srsatt/folio/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/srsatt/folio/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/srsatt/folio/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/srsatt/folio/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/srsatt/folio/releases/tag/v0.1.1
 [0.1.0]: https://github.com/srsatt/folio/releases/tag/v0.1.0

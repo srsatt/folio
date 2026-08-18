@@ -15,6 +15,19 @@ function codes(source: string): string[] {
   }
 }
 
+const flintSpec = {
+  data: { values: [{ month: "Jan", requests: 120 }, { month: "Feb", requests: 180 }] },
+  semantic_types: { month: "Month", requests: "Count" },
+  chart_spec: {
+    chartType: "Bar Chart",
+    encodings: { x: { field: "month" }, y: { field: "requests" } },
+  },
+};
+
+function chart(spec: unknown = flintSpec, language = "flint"): string {
+  return `{% chart alt="Requests by month" %}\n\n\`\`\`${language}\n${JSON.stringify(spec, null, 2)}\n\`\`\`\n\n{% /chart %}`;
+}
+
 describe("Folio Markdoc validation", () => {
   test("accepts minimal and complex reports", async () => {
     expect(validateReport(minimalReport()).summary).toBe("Concise summary.");
@@ -54,6 +67,14 @@ describe("Folio Markdoc validation", () => {
     ["unsafe file path", minimalReport("See {% file path=\"../secret\" /%}."), "tag.attribute-path"],
     ["invalid line range", minimalReport("See {% file path=\"src/a.ts\" lines=\"ten\" /%}."), "tag.attribute-lines"],
     ["image missing alt", minimalReport("{% media path=\"artifacts/a.png\" /%}"), "media.alt"],
+    ["chart missing alt", minimalReport(chart().replace(' alt="Requests by month"', "")), "chart.alt"],
+    ["chart wrong fence language", minimalReport(chart(flintSpec, "json")), "chart.language"],
+    ["chart invalid JSON", minimalReport(chart("bad").replace('"bad"', "{")), "chart.json"],
+    ["chart URL data", minimalReport(chart({ ...flintSpec, data: { url: "https://example.com/data.json" } })), "chart.data"],
+    ["chart missing field", minimalReport(chart({ ...flintSpec, chart_spec: { ...flintSpec.chart_spec, encodings: { x: "missing", y: "requests" } } })), "chart.field-missing"],
+    ["chart missing semantic type", minimalReport(chart({ ...flintSpec, semantic_types: { month: "Month" } })), "chart.semantic-type"],
+    ["chart unknown semantic type", minimalReport(chart({ ...flintSpec, semantic_types: { month: "Month", requests: "Metricish" } })), "chart.semantic-type-unknown"],
+    ["chart unsupported Plotly type", minimalReport(chart({ ...flintSpec, chart_spec: { ...flintSpec.chart_spec, chartType: "Mystery Chart" } })), "chart.compile"],
   ];
 
   test.each(cases)("rejects %s", (_name, source, expectedCode) => {
@@ -65,6 +86,10 @@ describe("Folio Markdoc validation", () => {
 
 {% media path="artifacts/run.mp4" kind="video" caption="Test run" /%}`));
     expect(parsed.frontmatter.title).toBe("Minimal report");
+  });
+
+  test("accepts an inline Flint chart", () => {
+    expect(validateReport(minimalReport(chart())).frontmatter.title).toBe("Minimal report");
   });
 
   test("every generated template is valid", () => {

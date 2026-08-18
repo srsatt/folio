@@ -118,6 +118,29 @@ Attach image or video artifacts from testing with the dedicated `media` tag:
 
 Media bytes are embedded as data URLs. Copying only `report.html` keeps images, videos, styling, annotation UI, and export logic intact. Media and file paths must be Git-root-relative; symlinked media may not escape the repository.
 
+## Flint charts
+
+Models can add semantic [Flint](https://microsoft.github.io/flint-chart/) chart specs directly to reports. Folio validates each spec, compiles it through Flint's Plotly backend, and embeds both the compiled figure and Plotly runtime into chart-bearing HTML. Charts stay interactive without a server or network connection.
+
+````markdoc
+{% chart alt="Requests by month" caption="Monthly request volume" %}
+
+```flint
+{
+  "data": { "values": [{ "month": "Jan", "requests": 120 }, { "month": "Feb", "requests": 180 }] },
+  "semantic_types": { "month": "Month", "requests": "Count" },
+  "chart_spec": {
+    "chartType": "Bar Chart",
+    "encodings": { "x": "month", "y": "requests" }
+  }
+}
+```
+
+{% /chart %}
+````
+
+Charts require useful `alt` text and one fenced `flint` JSON object. Only inline `data.values` is allowed; Folio never fetches chart data or reads paths named by a model. Encoded fields must exist in the rows and have semantic types. Limits are 5,000 rows, 100 fields, and 512 KiB per chart.
+
 ## Browser review
 
 Each paragraph, heading, list item, blockquote, and code block has a deterministic annotation anchor. Selections stay inside one block and may not overlap existing comments.

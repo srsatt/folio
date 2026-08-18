@@ -201,7 +201,7 @@ export function startArchiveServer(db: Database, options: ArchiveServerOptions =
         const file = Bun.file(report.htmlPath);
         if (!await file.exists()) return new Response("Report artifact missing", { status: 404 });
         let html = await file.text();
-        if (!html.includes('data-folio-shell-version="2"')) {
+        if (!html.includes('data-folio-shell-version="3"')) {
           try {
             html = await renderStandaloneReport(validateReport(report.sourceText, report.sourcePath), metadataFromRecord(report));
           } catch {

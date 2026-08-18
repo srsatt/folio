@@ -137,6 +137,14 @@ function downloadBlob(content, type, filename) {
 function shareableHtml(root, metadata) {
   const clone = root.cloneNode(true);
   clone.querySelector(".folio-server-navigation")?.remove();
+  for (const chart of clone.querySelectorAll("[data-folio-chart-id]")) {
+    chart.replaceChildren();
+    chart.className = "folio-chart-plot";
+    chart.removeAttribute("style");
+    chart.removeAttribute("data-folio-chart-error");
+  }
+  clone.querySelector("#js-plotly-tester")?.remove();
+  clone.querySelector(".plotly-notifier")?.remove();
   for (const link of clone.querySelectorAll("a.folio-file-ref")) {
     const label = clone.ownerDocument.createElement("span");
     for (const attribute of link.attributes) {

@@ -46,6 +46,7 @@ export const TAG_ATTRIBUTES = {
     caption: "string",
     title: "string",
   },
+  chart: { alt: "required-string", caption: "string" },
 } as const;
 
 export type FolioTagName = keyof typeof TAG_ATTRIBUTES;
@@ -131,6 +132,13 @@ export const MARKDOC_TAG_SCHEMA: Record<FolioTagName, Schema> = {
       alt: { type: String },
       caption: { type: String },
       title: { type: String },
+    },
+  },
+  chart: {
+    render: "figure",
+    attributes: {
+      alt: { type: String, required: true },
+      caption: { type: String },
     },
   },
 };

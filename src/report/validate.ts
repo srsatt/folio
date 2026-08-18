@@ -21,6 +21,7 @@ import {
   isSafeLink,
   type FolioTagName,
 } from "./schema";
+import { compileFlintNode, FlintChartError } from "./flint";
 
 const FRONTMATTER_FIELDS = new Set(["schema", "title", "kind", "tags", "supersedes"]);
 const MEDIA_IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "avif", "svg"]);
@@ -236,6 +237,15 @@ function validateAst(ast: Node, diagnostics: ValidationDiagnostic[]): string | n
           }
         }
         if (name === "file" && !node.inline) add(diagnostics, "file.inline", "`file` is an inline self-closing tag.", node);
+        if (name === "chart") {
+          if (!String(node.attributes.alt ?? "").trim()) add(diagnostics, "chart.alt", "Flint charts require non-empty `alt` text.", node);
+          try {
+            compileFlintNode(node);
+          } catch (error) {
+            if (error instanceof FlintChartError) add(diagnostics, error.code, error.message, node);
+            else throw error;
+          }
+        }
         const blockParent = [...parents].reverse().find((parent) => parent.type === "tag" && BLOCK_TAGS.includes(parent.tag as FolioTagName));
         if (blockParent && name !== "file") {
           add(diagnostics, "tag.nested", `Custom block \`${name}\` cannot be nested inside \`${blockParent.tag}\`.`, node);

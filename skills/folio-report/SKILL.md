@@ -23,7 +23,23 @@ Create a self-contained work product with Folio.
 
        {% media path="artifacts/result.png" alt="Result page after fix" caption="Browser verification" /%}
 
-7. Make report stand alone without conversation transcript.
+7. When data is clearer as a chart, author a compact Flint spec. Use inline rows, exact field names, and a semantic type for every encoded field. Folio compiles it to an offline Plotly chart:
+
+       {% chart alt="Requests by month" caption="Monthly request volume" %}
+       ```flint
+       {
+         "data": { "values": [{ "month": "Jan", "requests": 120 }] },
+         "semantic_types": { "month": "Month", "requests": "Count" },
+         "chart_spec": {
+           "chartType": "Bar Chart",
+           "encodings": { "x": "month", "y": "requests" }
+         }
+       }
+       ```
+       {% /chart %}
+
+   Do not use `data.url`, invent fields or semantic types, emit Plotly configuration, or paste large datasets. Prefer tables when chart does not improve comprehension.
+8. Make report stand alone without conversation transcript.
 
 For unfamiliar structure, run `folio template <kind>` or `folio format`. Read [references/format.md](references/format.md) only when full tag details are needed.
 

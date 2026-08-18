@@ -596,6 +596,8 @@ risk
 evidence
 details
 file
+media
+chart
 ```
 
 Unknown custom tags are validation errors.
@@ -1006,6 +1008,33 @@ For MVP, it does not have to open the editor.
 If repository metadata permits generating a safe GitHub/GitLab source URL without network access, that may be added later.
 
 Do not overbuild this feature now.
+
+---
+
+# 25a. Attached `media`
+
+Use a self-closing `media` tag for Git-root-relative image and video testing artifacts. Folio embeds the bytes as data URLs so standalone HTML remains complete. Images require useful `alt` text.
+
+---
+
+# 25b. Flint `chart`
+
+Use a `chart` block containing exactly one fenced `flint` JSON object. The tag requires useful `alt` text and accepts an optional `caption`.
+
+Folio must:
+
+- accept only inline `data.values`;
+- reject local paths and remote URLs;
+- validate field bindings and semantic types;
+- compile through Flint's Plotly backend during report creation;
+- embed the compiled figure and Plotly runtime only in chart-bearing HTML;
+- keep chart-bearing HTML interactive, offline, and self-contained;
+- preserve charts in HTML and PDF downloads and preserve source Flint in Markdown downloads;
+- surface Flint compiler warnings rather than silently hiding truncation.
+
+Bound each chart to 5,000 rows, 100 fields, and 512 KiB of source JSON.
+
+Do not accept backend-native Plotly configuration or executable JavaScript from report source.
 
 ---
 

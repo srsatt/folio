@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 
 const projectRoot = resolve(import.meta.dirname, "../..");
@@ -26,6 +27,21 @@ The review shell works end to end.
 ## Navigation target
 
 Review {% file path="src/cli.ts" lines="1-3" /%} before release.
+
+{% chart alt="Requests by month" caption="Monthly request volume" %}
+
+\`\`\`flint
+{
+  "data": { "values": [{ "month": "Jan", "requests": 120 }, { "month": "Feb", "requests": 180 }] },
+  "semantic_types": { "month": "Month", "requests": "Count" },
+  "chart_spec": {
+    "chartType": "Bar Chart",
+    "encodings": { "x": "month", "y": "requests" }
+  }
+}
+\`\`\`
+
+{% /chart %}
 `);
   const environment = { ...process.env, FOLIO_HOME: join(workspace, "data") };
   const created = spawnSync("bun", ["run", "src/cli.ts", "create", sourcePath, "--no-open", "--json"], {
@@ -60,7 +76,7 @@ test.afterAll(async () => {
   if (workspace) await rm(workspace, { recursive: true, force: true });
 });
 
-test("reviews and shares a served report", async ({ page }) => {
+test("reviews and shares a served report", async ({ page, context }) => {
   await page.goto(origin);
   await page.getByRole("link", { name: "Browser acceptance report" }).click();
 
@@ -69,6 +85,7 @@ test("reviews and shares a served report", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Download HTML" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Download PDF" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Download Markdown" })).toBeVisible();
+  await expect(page.locator(".folio-chart-plot .plot-container")).toBeVisible();
 
   await page.getByLabel("Theme").selectOption("dark");
   await expect(page.locator("html")).toHaveAttribute("data-folio-theme", "dark");
@@ -96,6 +113,15 @@ test("reviews and shares a served report", async ({ page }) => {
   expect(sharedHtml).not.toContain(projectRoot);
   expect(sharedHtml).toContain("src/cli.ts");
   expect(sharedHtml).not.toContain("Back to all reports");
+  expect(sharedHtml).toContain('id="folio-charts"');
+  expect(sharedHtml).not.toMatch(/<script[^>]+src=/);
+
+  const offlinePath = join(workspace, "downloaded-report.html");
+  await copyFile(downloadPath, offlinePath);
+  const offline = await context.newPage();
+  await offline.goto(pathToFileURL(offlinePath).href);
+  await expect(offline.locator(".folio-chart-plot .plot-container")).toBeVisible();
+  await offline.close();
 
   await page.getByRole("link", { name: "Back to all reports" }).click();
   await expect(page.getByRole("heading", { name: "Folio reports" })).toBeVisible();

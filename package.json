@@ -1,6 +1,6 @@
 {
   "name": "agent-folio",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Local-first, zero-server reports for coding-agent work",
   "keywords": [
     "ai-agent",
@@ -45,6 +45,8 @@
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@markdoc/markdoc": "^0.5.9",
+    "flint-chart": "^0.5.1",
+    "plotly.js-dist-min": "^3.7.0",
     "shiki": "^4.4.3",
     "yaml": "^2.9.0"
   },

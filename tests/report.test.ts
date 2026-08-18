@@ -60,6 +60,7 @@ describe("standalone rendering", () => {
     expect(html).toContain('data-folio-section="Result"');
     expect(html).not.toMatch(/<script[^>]+src=/);
     expect(html).not.toMatch(/<link[^>]+stylesheet/);
+    expect(html).not.toContain('id="folio-charts"');
     expect(html).not.toContain('<article class="folio-document"><article>');
   });
 
@@ -115,5 +116,32 @@ CLI entry point.
     } finally {
       await removeTemporaryDirectory(repo);
     }
+  });
+
+  test("compiles and embeds an offline Flint Plotly chart", async () => {
+    const spec = {
+      data: { values: [{ month: "Jan", requests: 120 }, { month: "Feb", requests: 180 }] },
+      semantic_types: { month: "Month", requests: "Count" },
+      chart_spec: {
+        chartType: "Bar Chart",
+        encodings: { x: "month", y: "requests" },
+      },
+    };
+    const source = minimalReport(`{% chart alt="Requests by month" caption="Monthly request volume" %}
+
+\`\`\`flint
+${JSON.stringify(spec, null, 2)}
+\`\`\`
+
+{% /chart %}`);
+    const html = await renderStandaloneReport(validateReport(source), metadata(source));
+    expect(html).toContain('id="folio-charts"');
+    expect(html).toContain('data-folio-chart-id="folio-chart-0001"');
+    expect(html).toContain('aria-label="Requests by month"');
+    expect(html).toContain("Monthly request volume");
+    expect(html).toContain('"type":"bar"');
+    expect(html).toContain("plotly.js v3.7.0");
+    expect(html).toContain("plotly.newPlot");
+    expect(html).not.toMatch(/<script[^>]+src=/);
   });
 });

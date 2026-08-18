@@ -118,12 +118,18 @@ Body
   Normal links: http, https, mailto, or # anchors.
 
 Tags
-  summary, callout, finding, decision, recommendation, risk, evidence, details, file, media
+  summary, callout, finding, decision, recommendation, risk, evidence, details, file, media, chart
   File paths are always relative to the Git root.
   Attach local image/video artifacts with:
     {% media path="artifacts/test.png" alt="Test result" caption="Browser result" /%}
   Refer to source files with:
     {% file path="src/auth.ts" lines="20-35" /%}
+  Add an offline Flint chart with one fenced flint JSON spec:
+    {% chart alt="Requests by month" caption="Monthly volume" %}
+    \`\`\`flint
+    {"data":{"values":[{"month":"Jan","requests":120}]},"semantic_types":{"month":"Month","requests":"Count"},"chart_spec":{"chartType":"Bar Chart","encodings":{"x":"month","y":"requests"}}}
+    \`\`\`
+    {% /chart %}
 
 Example
 ---

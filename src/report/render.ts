@@ -5,10 +5,18 @@ import { pathToFileURL } from "node:url";
 import reviewCss from "../web/review.css" with { type: "text" };
 // @ts-expect-error Bun's text loader returns JavaScript source rather than module exports.
 import reviewClient from "../web/review.js" with { type: "text" };
+// @ts-expect-error Bun's text loader returns JavaScript source rather than module exports.
+import chartClient from "../web/charts.js" with { type: "text" };
+import plotlyRuntime from "plotly.js-dist-min/plotly.min.js" with { type: "text" };
 import { embeddedJetBrainsMonoFontCss } from "../web/font";
 
 import type { ParsedReport, ReportMetadata } from "../types";
+import { compileFlintNode, type CompiledFlintChart } from "./flint";
 import { MARKDOC_TAG_SCHEMA, type FolioTagName } from "./schema";
+
+interface EmbeddedFlintChart extends CompiledFlintChart {
+  id: string;
+}
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => ({
@@ -96,6 +104,35 @@ async function mediaTag(node: Node, repoRoot: string | null): Promise<Tag> {
   }, [media, new Tag("figcaption", {}, captionChildren)]);
 }
 
+function chartTag(node: Node, charts: EmbeddedFlintChart[]): Tag {
+  const id = `folio-chart-${String(charts.length + 1).padStart(4, "0")}`;
+  const chart = compileFlintNode(node);
+  charts.push({ id, ...chart });
+  const alt = String(node.attributes.alt);
+  const caption = String(node.attributes.caption ?? "").trim();
+  const children: Array<Tag | string> = [
+    new Tag("div", {
+      id,
+      class: "folio-chart-plot",
+      "data-folio-chart-id": id,
+      role: "img",
+      "aria-label": alt,
+    }, []),
+  ];
+  if (caption) children.push(new Tag("figcaption", {}, [caption]));
+  if (chart.warnings.length > 0) {
+    children.push(new Tag("details", { class: "folio-chart-warnings" }, [
+      new Tag("summary", {}, [`Chart notes (${chart.warnings.length})`]),
+      new Tag("ul", {}, chart.warnings.map((warning) => new Tag("li", {}, [warning]))),
+    ]));
+  }
+  return new Tag("figure", {
+    class: "folio-chart",
+    "data-folio-context-kind": "chart",
+    "data-folio-context-title": alt,
+  }, children);
+}
+
 function badge(text: string): Tag {
   return new Tag("span", { class: "folio-badge" }, [text]);
 }
@@ -128,7 +165,7 @@ function renderSemantic(
       new Tag("div", { class: "folio-details-body" }, node.transformChildren(config)),
     ]);
   }
-  if (name === "file" || name === "media") throw new Error(`Unexpected semantic renderer: ${name}`);
+  if (name === "file" || name === "media" || name === "chart") throw new Error(`Unexpected semantic renderer: ${name}`);
 
   const title = String(node.attributes.title ?? (name === "evidence" ? "Evidence" : name));
   const header: Array<Tag | string> = [new Tag("strong", {}, [title])];
@@ -164,7 +201,7 @@ function renderSemantic(
   ]);
 }
 
-function renderConfig(repoRoot: string | null): Config {
+function renderConfig(repoRoot: string | null, charts: EmbeddedFlintChart[]): Config {
   let blockIndex = 0;
   let section = "Summary";
   const annotate = (attributes: Record<string, unknown> = {}): Record<string, unknown> => ({
@@ -218,6 +255,7 @@ function renderConfig(repoRoot: string | null): Config {
     transform(node: Node, config: Config) {
       if (name === "file") return fileReference(repoRoot, String(node.attributes.path), typeof node.attributes.lines === "string" ? node.attributes.lines : undefined);
       if (name === "media") return mediaTag(node, repoRoot);
+      if (name === "chart") return chartTag(node, charts);
       return renderSemantic(name as FolioTagName, node, config, repoRoot);
     },
   }]));
@@ -229,7 +267,8 @@ function safeJson(value: unknown): string {
 }
 
 export async function renderStandaloneReport(parsed: ParsedReport, metadata: ReportMetadata): Promise<string> {
-  const transformed = await Markdoc.transform(parsed.ast, renderConfig(metadata.repository.root));
+  const charts: EmbeddedFlintChart[] = [];
+  const transformed = await Markdoc.transform(parsed.ast, renderConfig(metadata.repository.root, charts));
   const article = Markdoc.renderers.html(transformed);
   const fontCss = await embeddedJetBrainsMonoFontCss();
   const repo = metadata.repository;
@@ -241,7 +280,7 @@ export async function renderStandaloneReport(parsed: ParsedReport, metadata: Rep
   ].filter(Boolean);
 
   return `<!doctype html>
-<html lang="en" data-folio-shell-version="2" data-folio-theme="system">
+<html lang="en" data-folio-shell-version="3" data-folio-theme="system">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -317,6 +356,9 @@ export async function renderStandaloneReport(parsed: ParsedReport, metadata: Rep
 </dialog>
 <script id="folio-metadata" type="application/json">${safeJson(metadata)}</script>
 <script id="folio-source" type="application/json">${safeJson(parsed.source)}</script>
+${charts.length ? `<script id="folio-charts" type="application/json">${safeJson(charts)}</script>
+<script>${plotlyRuntime.replace(/<\/script/gi, "<\\/script")}</script>
+<script type="module">${chartClient.replace(/<\/script/gi, "<\\/script")}</script>` : ""}
 <script type="module">${reviewClient.replace(/<\/script/gi, "<\\/script")}</script>
 </body>
 </html>`;
