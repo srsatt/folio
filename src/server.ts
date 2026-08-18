@@ -3,7 +3,7 @@ import { realpath, stat } from "node:fs/promises";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { getReport, listReports } from "./db";
+import { getReport, listReports, listRepositories } from "./db";
 import { renderStandaloneReport } from "./report/render";
 import { isRepoRelativePath, LINE_RANGE } from "./report/schema";
 import { validateReport } from "./report/validate";
@@ -129,6 +129,15 @@ function archivePage(db: Database, url: URL): string {
   const kind = url.searchParams.get("kind")?.trim() || undefined;
   const repo = url.searchParams.get("repo")?.trim() || undefined;
   const reports = listReports(db, { search, kind, repo, limit: 100 });
+  const repositories = listRepositories(db);
+  const repositoryHref = (key?: string): string => {
+    const parameters = new URLSearchParams();
+    if (search) parameters.set("q", search);
+    if (kind) parameters.set("kind", kind);
+    if (key) parameters.set("repo", key);
+    const query = parameters.toString();
+    return query ? `/?${query}` : "/";
+  };
   const cards = reports.map((report) => `
     <article>
       <div class="meta">${escapeHtml(report.kind)} · ${escapeHtml(new Date(report.createdAt).toLocaleString())}</div>
@@ -137,15 +146,28 @@ function archivePage(db: Database, url: URL): string {
       <div class="meta">${[report.repoKey, report.repoBranch, report.repoCommit?.slice(0, 7)].filter(Boolean).map((value) => escapeHtml(String(value))).join(" · ")}</div>
       <div class="tags">${report.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>
     </article>`).join("");
+  const repositoryLinks = repositories.map((repository) => {
+    const active = repository.key === repo;
+    return `<li><a href="${escapeHtml(repositoryHref(repository.key))}"${active ? ' aria-current="page"' : ""}><span>${escapeHtml(repository.key)}</span><span class="repo-count">${repository.reportCount}</span></a></li>`;
+  }).join("");
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Folio archive</title><style>
-:root{font-family:system-ui,sans-serif;color-scheme:light dark}body{max-width:850px;margin:0 auto;padding:3rem 1.2rem;line-height:1.55}h1{font-size:2.2rem}form{display:flex;flex-wrap:wrap;gap:.5rem;margin:2rem 0}input{min-width:12rem;flex:1;padding:.55rem}button{padding:.55rem .8rem}article{padding:1.2rem 0;border-top:1px solid #8885}article h2{margin:.2rem 0;font-size:1.3rem}article p{margin:.45rem 0}.meta{opacity:.7;font-size:.8rem}.tags{display:flex;gap:.35rem;margin-top:.5rem}.tags span{border:1px solid #8887;border-radius:2rem;padding:.08rem .42rem;font-size:.72rem}
+:root{font-family:system-ui,sans-serif;color-scheme:light dark}body{max-width:1180px;margin:0 auto;padding:3rem 1.2rem;line-height:1.55}h1{font-size:2.2rem}form{display:flex;flex-wrap:wrap;gap:.5rem;margin:2rem 0}input{min-width:12rem;flex:1;padding:.55rem}button{padding:.55rem .8rem}.archive-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(14rem,18rem);gap:3rem;align-items:start}.archive-layout main{min-width:0}article{padding:1.2rem 0;border-top:1px solid #8885}article h2{margin:.2rem 0;font-size:1.3rem}article p{margin:.45rem 0}.meta{opacity:.7;font-size:.8rem}.tags{display:flex;gap:.35rem;margin-top:.5rem}.tags span{border:1px solid #8887;border-radius:2rem;padding:.08rem .42rem;font-size:.72rem}.repo-panel{position:sticky;top:2rem;padding:1rem;border:1px solid #8885;border-radius:.6rem}.repo-panel h2{margin:0 0 .65rem;font-size:1rem}.repo-panel ul{display:grid;gap:.2rem;margin:0;padding:0;list-style:none}.repo-panel a{display:flex;justify-content:space-between;gap:1rem;padding:.45rem .55rem;border-radius:.35rem;color:inherit;text-decoration:none}.repo-panel a:hover,.repo-panel a:focus-visible{background:#8882}.repo-panel a[aria-current="page"]{background:#8883;font-weight:700}.repo-panel a span:first-child{min-width:0;overflow-wrap:anywhere}.repo-count{opacity:.65;font-variant-numeric:tabular-nums}@media(max-width:760px){.archive-layout{grid-template-columns:1fr;gap:1rem}.repo-panel{position:static;grid-row:1}.repo-panel ul{grid-template-columns:repeat(auto-fit,minmax(12rem,1fr))}}
 </style></head><body>
 <header><div>Local, read-only archive</div><h1>Folio reports</h1></header>
-<form method="get"><input name="q" aria-label="Search" placeholder="Search title or summary" value="${escapeHtml(search ?? "")}"><input name="kind" aria-label="Kind" placeholder="Kind" value="${escapeHtml(kind ?? "")}"><input name="repo" aria-label="Repository" placeholder="Repository key" value="${escapeHtml(repo ?? "")}"><button>Filter</button></form>
-<main>${cards || "<p>No reports found.</p>"}</main>
+<form method="get"><input name="q" aria-label="Search" placeholder="Search title or summary" value="${escapeHtml(search ?? "")}"><input name="kind" aria-label="Kind" placeholder="Kind" value="${escapeHtml(kind ?? "")}">${repo ? `<input type="hidden" name="repo" value="${escapeHtml(repo)}">` : ""}<button>Filter</button></form>
+<div class="archive-layout">
+  <main>${cards || "<p>No reports found.</p>"}</main>
+  <aside class="repo-panel" aria-label="Filter reports by repository">
+    <h2>Repositories</h2>
+    <nav aria-label="Repositories"><ul>
+      <li><a href="${escapeHtml(repositoryHref())}"${repo ? "" : ' aria-current="page"'}><span>All reports</span></a></li>
+      ${repositoryLinks || "<li>No Git repositories yet.</li>"}
+    </ul></nav>
+  </aside>
+</div>
 </body></html>`;
 }
 

@@ -89,6 +89,38 @@ describe("archive server", () => {
     }
   });
 
+  test("lists repositories in a right panel and filters reports", async () => {
+    const home = await temporaryDirectory("folio-server-");
+    temporary.push(home);
+    const db = openDatabase(home);
+    await storeReport(db, home, validateReport(minimalReport().replace("Minimal report", "Alpha report")), {
+      ...noGit,
+      repoKey: "srsatt/alpha",
+    });
+    await storeReport(db, home, validateReport(minimalReport().replace("Minimal report", "Beta report")), {
+      ...noGit,
+      repoKey: "srsatt/beta",
+    });
+    const server = startArchiveServer(db, { port: 0 });
+    const origin = `http://${server.hostname}:${server.port}`;
+    try {
+      const archiveHtml = await (await fetch(origin)).text();
+      expect(archiveHtml).toContain('class="repo-panel"');
+      expect(archiveHtml).toContain("srsatt/alpha");
+      expect(archiveHtml).toContain("srsatt/beta");
+
+      const filteredHtml = await (await fetch(`${origin}/?q=report&kind=general&repo=${encodeURIComponent("srsatt/alpha")}`)).text();
+      expect(filteredHtml).toContain("Alpha report");
+      expect(filteredHtml).not.toContain("Beta report");
+      expect(filteredHtml).toContain('<input type="hidden" name="repo" value="srsatt/alpha">');
+      expect(filteredHtml).toContain('href="/?q=report&amp;kind=general&amp;repo=srsatt%2Falpha" aria-current="page"');
+      expect(filteredHtml).toContain('href="/?q=report&amp;kind=general"');
+    } finally {
+      server.stop(true);
+      db.close();
+    }
+  });
+
   test("renders old stored reports with the current review shell", async () => {
     const home = await temporaryDirectory("folio-server-");
     temporary.push(home);

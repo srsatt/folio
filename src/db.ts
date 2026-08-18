@@ -34,6 +34,11 @@ export interface ReportListFilters {
   search?: string | undefined;
 }
 
+export interface RepositorySummary {
+  key: string;
+  reportCount: number;
+}
+
 const MIGRATIONS = [{
   version: 1,
   sql: `
@@ -176,4 +181,14 @@ export function listReports(db: Database, filters: ReportListFilters = {}): Repo
   parameters.push(limit);
   const sql = `SELECT * FROM reports${where.length ? ` WHERE ${where.join(" AND ")}` : ""} ORDER BY created_at DESC LIMIT ?`;
   return db.query<ReportRow, Array<string | number>>(sql).all(...parameters).map(rowToRecord);
+}
+
+export function listRepositories(db: Database): RepositorySummary[] {
+  return db.query<{ repo_key: string; report_count: number }, []>(`
+    SELECT repo_key, COUNT(*) AS report_count
+    FROM reports
+    WHERE repo_key IS NOT NULL AND repo_key != ''
+    GROUP BY repo_key
+    ORDER BY repo_key COLLATE NOCASE, repo_key
+  `).all().map((row) => ({ key: row.repo_key, reportCount: row.report_count }));
 }

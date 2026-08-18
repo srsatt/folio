@@ -178,6 +178,8 @@ folio serve
 # http://127.0.0.1:7331
 ```
 
+The archive lists known Git repositories in a right-side panel with report counts. Selecting one filters the report list while preserving title/summary search and kind filters.
+
 Served reports use the current review shell, so older immutable artifacts gain current navigation and controls without being rewritten on disk. A **Back to all reports** action returns to the archive. Referenced repository files open in a Night Owl syntax-highlighted viewer with JetBrains Mono, line-aware comments, and the shared theme switcher. Source access is limited to files referenced by the report, contained inside the repository root, and served only on loopback. A non-loopback host requires explicit `--allow-network`; served metadata omits the absolute repository root and repository links are disabled.
 
 ## Coding-agent skill

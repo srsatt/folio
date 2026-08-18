@@ -4,6 +4,14 @@ All notable changes use this file. Folio follows [Semantic Versioning](https://s
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-18
+
+### Added
+
+- Repository filter panel with per-project report counts in the archive.
+
+## [0.1.1] - 2026-08-17
+
 ### Added
 
 - Source-based npm and `bunx` distribution, with a packed-package smoke test.
@@ -15,5 +23,7 @@ All notable changes use this file. Folio follows [Semantic Versioning](https://s
 
 - Initial local-first report compiler, catalog, review UI, archive, source viewer, standalone binaries, and coding-agent skill.
 
-[Unreleased]: https://github.com/srsatt/folio/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/srsatt/folio/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/srsatt/folio/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/srsatt/folio/releases/tag/v0.1.1
 [0.1.0]: https://github.com/srsatt/folio/releases/tag/v0.1.0

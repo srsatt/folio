@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { join } from "node:path";
 
-import { getReport, listReports, openDatabase } from "../src/db";
+import { getReport, listReports, listRepositories, openDatabase } from "../src/db";
 import { contentHash, storeReport } from "../src/storage";
 import type { GitMetadata } from "../src/types";
 import { validateReport } from "../src/report/validate";
@@ -45,6 +45,22 @@ describe("report storage", () => {
 
   test("normalizes line endings before hashing", () => {
     expect(contentHash("a\r\nb\r")).toBe(contentHash("a\nb\n"));
+  });
+
+  test("lists Git repositories with report counts", async () => {
+    const home = await temporaryDirectory("folio-storage-");
+    temporary.push(home);
+    const db = openDatabase(home);
+    await storeReport(db, home, validateReport(minimalReport()), { ...noGit, repoKey: "srsatt/zeta" });
+    await storeReport(db, home, validateReport(minimalReport()), { ...noGit, repoKey: "srsatt/alpha" });
+    await storeReport(db, home, validateReport(minimalReport()), { ...noGit, repoKey: "srsatt/zeta" });
+    await storeReport(db, home, validateReport(minimalReport()), noGit);
+
+    expect(listRepositories(db)).toEqual([
+      { key: "srsatt/alpha", reportCount: 1 },
+      { key: "srsatt/zeta", reportCount: 2 },
+    ]);
+    db.close();
   });
 
   test("keeps generated files outside source repository", async () => {

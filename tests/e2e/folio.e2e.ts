@@ -110,3 +110,22 @@ test("opens a highlighted repository source page", async ({ page }) => {
   await expect(page.locator(".folio-source-code")).toHaveCSS("font-family", /JetBrains Mono/);
   await expect(page.getByRole("complementary", { name: "Review comments" })).toBeVisible();
 });
+
+test("filters archive reports from the repository panel", async ({ page }) => {
+  await page.goto(origin);
+  const panel = page.getByRole("complementary", { name: "Filter reports by repository" });
+  const repository = panel.getByRole("link", { name: /github\.com\/srsatt\/folio/ });
+  await expect(panel).toBeVisible();
+  await expect(repository).toContainText("1");
+
+  const mainBox = await page.getByRole("main").boundingBox();
+  const panelBox = await panel.boundingBox();
+  expect(mainBox).not.toBeNull();
+  expect(panelBox).not.toBeNull();
+  expect(panelBox!.x).toBeGreaterThan(mainBox!.x);
+
+  await repository.click();
+  await expect(page).toHaveURL(/repo=github\.com%2Fsrsatt%2Ffolio/);
+  await expect(repository).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: "Browser acceptance report" })).toBeVisible();
+});
