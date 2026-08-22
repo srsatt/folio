@@ -35,7 +35,7 @@ describe("standalone binary", () => {
     const folioHome = join(root, "data");
     const codexHome = join(root, "codex");
 
-    const installed = await run(["bun", "run", "scripts/install.ts", "--bin-dir", binDirectory]);
+    const installed = await run(["bun", "run", "build:install", "--", "--bin-dir", binDirectory]);
     expect(installed.exitCode).toBe(0);
     expect(await Bun.file(binary).exists()).toBe(true);
     const version = await run([binary, "--version"]);

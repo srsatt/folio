@@ -7,6 +7,7 @@ import packageJson from "../package.json" with { type: "json" };
 import { resolveFolioHome } from "./config";
 import { getLatestReport, getReport, listReports, openDatabase } from "./db";
 import { collectGitMetadata } from "./git";
+import { exportReportFile, type ExportFormat } from "./export";
 import { startArchiveServer } from "./server";
 import { storeReport } from "./storage";
 import { installBundledSkill, resolveCodexSkillsDirectory } from "./skill";
@@ -23,6 +24,7 @@ Commands:
   format
   list [--repo <key>] [--kind <kind>] [--limit <n>] [--json]
   show <id> [--source] [--json]
+  export <id> <--md|--html|--pdf> [--out <directory>]
   open <id|latest>
   serve [--host 127.0.0.1] [--port 7331] [--allow-network]
   skill install [--target <skills-directory>] [--data-dir <directory>] [--force] [--json]
@@ -41,6 +43,7 @@ const COMMAND_HELP: Record<string, string> = {
   format: "Usage: folio format",
   list: "Usage: folio list [--repo <key>] [--kind <kind>] [--limit <n>] [--json] [--data-dir <directory>]",
   show: "Usage: folio show <id> [--source] [--json] [--data-dir <directory>]",
+  export: "Usage: folio export <id> <--md|--html|--pdf> [--out <directory>] [--data-dir <directory>]",
   open: "Usage: folio open <id|latest> [--data-dir <directory>]",
   serve: "Usage: folio serve [--host 127.0.0.1] [--port 7331] [--allow-network] [--data-dir <directory>]",
   path: "Usage: folio path [--data-dir <directory>]",
@@ -48,7 +51,7 @@ const COMMAND_HELP: Record<string, string> = {
   skill: "Usage: folio skill install [--target <skills-directory>] [--data-dir <directory>] [--force] [--json]",
 };
 
-const VALUE_FLAGS = new Set(["--supersedes", "--repo", "--kind", "--limit", "--host", "--port", "--target", "--data-dir"]);
+const VALUE_FLAGS = new Set(["--supersedes", "--repo", "--kind", "--limit", "--host", "--port", "--target", "--data-dir", "--out"]);
 
 const COMMAND_FLAGS: Record<string, ReadonlySet<string>> = {
   create: new Set(["--stdin", "--no-open", "--json", "--supersedes", "--data-dir"]),
@@ -57,6 +60,7 @@ const COMMAND_FLAGS: Record<string, ReadonlySet<string>> = {
   format: new Set(),
   list: new Set(["--repo", "--kind", "--limit", "--json", "--data-dir"]),
   show: new Set(["--source", "--json", "--data-dir"]),
+  export: new Set(["--md", "--html", "--pdf", "--out", "--data-dir"]),
   open: new Set(["--data-dir"]),
   serve: new Set(["--host", "--port", "--allow-network", "--data-dir"]),
   path: new Set(["--data-dir"]),
@@ -69,6 +73,7 @@ const POSITIONAL_LIMITS: Record<string, readonly [minimum: number, maximum: numb
   format: [0, 0],
   list: [0, 0],
   show: [1, 1],
+  export: [1, 1],
   open: [1, 1],
   serve: [0, 0],
   path: [0, 0],
@@ -147,11 +152,17 @@ function assertPositionals(command: string, args: string[]): void {
 }
 
 function completion(shell: string): string {
-  const commands = "create validate template format list show open serve skill path completion";
+  const commands = "create validate template format list show export open serve skill path completion";
   if (shell === "bash") return `complete -W "${commands}" folio`;
   if (shell === "zsh") return `#compdef folio\n_arguments '1:command:(${commands})'`;
   if (shell === "fish") return commands.split(" ").map((command) => `complete -c folio -f -n '__fish_use_subcommand' -a '${command}'`).join("\n");
   throw new Error(`Unknown shell: ${shell}. Expected bash, zsh, or fish.`);
+}
+
+function exportFormat(args: string[]): ExportFormat {
+  const formats = (["md", "html", "pdf"] as const).filter((format) => hasFlag(args, `--${format}`));
+  if (formats.length !== 1) throw new Error("Choose exactly one export format: --md, --html, or --pdf.");
+  return formats[0]!;
 }
 
 function shouldOpenImplicitly(args: string[]): boolean {
@@ -338,6 +349,28 @@ ${created.record.htmlPath}
 ${git}
 ${shouldOpenImplicitly(rest) ? opened ? "Opened in browser." : "Could not open browser; report was created successfully." : "Browser opening skipped."}`);
         }
+        return 0;
+      } finally {
+        db.close();
+      }
+    }
+
+    if (command === "export") {
+      const id = positional(rest)[0];
+      if (!id) throw new Error("Missing report ID.");
+      const format = exportFormat(rest);
+      const db = openDatabase(home);
+      try {
+        const report = getReport(db, id);
+        if (!report) throw new Error(`Report not found: ${id}`);
+        const requestedOutput = valueAfter(rest, "--out");
+        if (format === "md" && !requestedOutput) {
+          await writeStdout(report.sourceText);
+          return 0;
+        }
+        const outputDirectory = resolve(process.cwd(), requestedOutput ?? "out");
+        const path = await exportReportFile(report, format, outputDirectory);
+        await writeStdout(`Exported ${format.toUpperCase()}:\n${path}`);
         return 0;
       } finally {
         db.close();

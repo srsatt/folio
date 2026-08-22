@@ -40,6 +40,50 @@ describe("CLI", () => {
     expect(source.stdout).toContain("schema: folio/v1");
   });
 
+  test("exports Markdown to stdout and Markdown, HTML, and PDF to a directory", async () => {
+    if (process.platform === "win32") return;
+    const home = await temporaryDirectory("folio-cli-");
+    const outputDirectory = await temporaryDirectory("folio-export-");
+    const browserDirectory = await temporaryDirectory("folio-browser-");
+    temporary.push(home, outputDirectory, browserDirectory);
+    const source = minimalReport();
+    const created = await runCli(home, ["create", "--stdin", "--no-open", "--json"], source);
+    const report = JSON.parse(created.stdout);
+
+    const stdout = await runCli(home, ["export", report.id, "--md"]);
+    expect(stdout.exitCode).toBe(0);
+    expect(stdout.stdout).toContain("schema: folio/v1");
+    expect(await Bun.file(join(process.cwd(), "out", `${report.id}.md`)).exists()).toBe(false);
+
+    const markdown = await runCli(home, ["export", report.id, "--md", "--out", outputDirectory]);
+    expect(markdown.exitCode).toBe(0);
+    expect(await Bun.file(join(outputDirectory, `${report.id}.md`)).text()).toBe(source);
+
+    const html = await runCli(home, ["export", report.id, "--html", "--out", outputDirectory]);
+    expect(html.exitCode).toBe(0);
+    expect(await Bun.file(join(outputDirectory, `${report.id}.html`)).text()).toContain("<!doctype html>");
+
+    const browser = join(browserDirectory, "chrome");
+    await Bun.write(browser, `#!/usr/bin/env bun
+const output = process.argv.find((argument) => argument.startsWith("--print-to-pdf="))?.slice("--print-to-pdf=".length);
+if (!output) process.exit(2);
+const descendant = Bun.spawn(["sleep", "3"], { stdout: "ignore", stderr: "inherit" });
+descendant.unref();
+await Bun.write(output, "%PDF-1.4\\n% Folio test\\n%%EOF\\n");
+`);
+    await chmod(browser, 0o755);
+    await Bun.write(join(outputDirectory, `${report.id}.pdf`), "%PDF stale\n%%EOF\n");
+    const pdfStartedAt = Date.now();
+    const pdf = await runCli(home, ["export", report.id, "--pdf", "--out", outputDirectory], undefined, { FOLIO_CHROME_BIN: browser });
+    expect(pdf.exitCode).toBe(0);
+    expect(Date.now() - pdfStartedAt).toBeLessThan(1_500);
+    expect(await Bun.file(join(outputDirectory, `${report.id}.pdf`)).text()).toStartWith("%PDF-1.4");
+
+    const missingFormat = await runCli(home, ["export", report.id]);
+    expect(missingFormat.exitCode).toBe(1);
+    expect(missingFormat.stderr).toContain("Choose exactly one export format");
+  });
+
   test("prints templates, format guide, and resolved path", async () => {
     const home = await temporaryDirectory("folio-cli-");
     const override = await temporaryDirectory("folio-data-override-");

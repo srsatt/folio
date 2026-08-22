@@ -43,7 +43,7 @@ To compile and install a standalone binary from a checkout:
 
 ```bash
 bun install
-bun run install:binary
+bun run build:install
 ```
 
 This builds a standalone executable at `~/.local/bin/folio`. It does not edit shell profiles. Use `--bin-dir <directory>` for another location or `--force` to replace an existing binary:
@@ -160,6 +160,7 @@ folio template <kind>
 folio format
 folio list [--repo <key>] [--kind <kind>] [--limit <n>] [--json]
 folio show <id> [--source] [--json]
+folio export <id> <--md|--html|--pdf> [--out <directory>]
 folio open <id|latest>
 folio path
 folio serve [--host 127.0.0.1] [--port 7331]
@@ -171,6 +172,8 @@ folio --version
 Pass `--data-dir <directory>` to any command that reads or writes the catalog. It has precedence over `FOLIO_HOME`; relative paths resolve from the current directory.
 
 `create` validates before writing, collects local Git metadata, writes report artifacts atomically, and inserts catalog metadata. It opens HTML by default only in an interactive terminal; `--json`, `--no-open`, CI, and redirected output skip implicit opening. Browser-opening failure does not discard or fail report creation.
+
+`export` prints Markdown to stdout when `--md` is used without `--out`. Markdown with `--out`, HTML, and PDF are written as `out/<report-id>.<format>` by default; pass `--out <directory>` to choose another directory. PDF export uses a locally installed Chrome, Chromium, or Edge executable; set `FOLIO_CHROME_BIN` when automatic discovery cannot find it.
 
 Unknown options fail. Use `--` before a path beginning with `-`. Set `FOLIO_DEBUG=1` to include a stack trace for unexpected failures. Generate basic shell completion with, for example, `folio completion zsh`.
 
@@ -231,6 +234,8 @@ The installer records this value in the skill's small runtime reference. The ski
 
 Then invoke `$folio-report`, or let it trigger for substantial work products. Skill uses progressive disclosure: short workflow in `SKILL.md`, full format details in `references/format.md`, and CLI-generated templates for common report kinds.
 
+For substantial work in an existing repository, the skill first uses `folio list --json`, `folio show <id> --json`, and `folio export <id> --md` to recover relevant prior insights. Historical reports remain context rather than current truth, so the agent verifies drift-prone claims against the repository before relying on them.
+
 ## Development
 
 ```bash
@@ -239,6 +244,7 @@ bun test
 bun run check
 bun run test:package
 bun run build:binary
+bun run build:install
 ```
 
 Tests isolate `FOLIO_HOME`; they never touch your real catalog.
@@ -262,6 +268,6 @@ Report input is untrusted text. Folio allowlists tags and attributes, rejects ra
 - Review state is browser-local and differs between `file://` and archive HTTP origins.
 - Media embedding increases HTML size, especially for video.
 - Repository links target local absolute `file://` paths generated at creation time, so they may not work after moving HTML to another machine.
-- No collaboration, comment threads, syncing, report editing, full-text search, generated PDF/DOCX files, AI calls, MCP, or GitHub/GitLab API integration. Browser print-to-PDF remains available.
+- No collaboration, comment threads, syncing, report editing, full-text search, generated DOCX files, AI calls, MCP, or GitHub/GitLab API integration. PDF export requires a locally installed Chromium-family browser.
 
 See [Folio.md](Folio.md) for complete product specification.

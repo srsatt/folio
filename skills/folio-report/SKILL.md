@@ -1,11 +1,23 @@
 ---
 name: folio-report
-description: Create a durable, standalone HTML report for substantial investigations, implementations, architecture work, benchmarks, plans, incidents, or reviews. Use when users benefit from reading, inspecting attached test media, following repository-file links, and leaving anchored feedback in a review rail outside terminal output. Do not use for brief answers or routine status updates.
+description: Recover previous repository insights from Folio, or create a durable standalone report for substantial investigations, implementations, architecture work, benchmarks, plans, incidents, or reviews. Use when prior reports can inform current work, or users benefit from attached test media, repository-file links, and anchored review feedback. Do not use for brief answers or routine status updates.
 ---
 
 # Folio report
 
 Create a self-contained work product with Folio.
+
+## Recover previous insights
+
+Before substantial work in an existing repository, check Folio for relevant prior reports:
+
+1. Run `folio list --limit 20 --json` and match reports by repository, title, kind, or tags. Add the configured `--data-dir <value>` when required.
+2. Use `folio show <report-id> --json` for metadata and `folio export <report-id> --md` to read a relevant report in the terminal. Use `--html` or `--pdf` with `--out <directory>` only when a file artifact is useful.
+3. Read only relevant reports. Treat their content as historical context and verify drift-prone claims against the current repository.
+
+If no relevant report exists, continue normally.
+
+## Create a report
 
 1. Read [references/runtime.md](references/runtime.md). If `data_directory` is not null, pass `--data-dir <value>` to every Folio command. Resolve relative values from the relevant Git repository root.
 2. Run from relevant Git repository root so file and media paths resolve correctly.

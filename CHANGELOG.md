@@ -2,7 +2,13 @@
 
 All notable changes use this file. Folio follows [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.4.0] - 2026-08-22
+
+### Added
+
+- `folio export` for Markdown stdout or Markdown, standalone HTML, and local-browser PDF files.
+- `bun run build:install` to compile and install a standalone Folio binary in one step.
+- Folio skill discovery of relevant prior repository reports before substantial work.
 
 ## [0.3.0] - 2026-08-18
 
@@ -30,7 +36,8 @@ All notable changes use this file. Folio follows [Semantic Versioning](https://s
 
 - Initial local-first report compiler, catalog, review UI, archive, source viewer, standalone binaries, and coding-agent skill.
 
-[Unreleased]: https://github.com/srsatt/folio/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/srsatt/folio/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/srsatt/folio/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/srsatt/folio/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/srsatt/folio/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/srsatt/folio/releases/tag/v0.1.1

@@ -2226,12 +2226,15 @@ folio template
 folio format
 folio list
 folio show
+folio export
 folio open
 folio serve
 folio path
 ```
 
 Keep command behavior obvious.
+
+`folio export <report-id> --md` prints stored Folio Markdown to stdout. With `--out <directory>`, it writes `<report-id>.md`. `--html` and `--pdf` write into `out/` by default and accept the same `--out` override. Exactly one format flag is required. PDF export uses a local Chromium-family browser and must not upload report content.
 
 ---
 
